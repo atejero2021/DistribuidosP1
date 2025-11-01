@@ -813,12 +813,12 @@ func listarVehiculosCliente() {
 func listarMecanicosDisponibles() {
 	fmt.Println("\n--- MECÁNICOS DISPONIBLES ---")
 
-	// Crear un mapa con los mecánicos que están ocupados
-	asignados := make(map[int]bool)
+	// Crear un slice con los IDs de mecánicos ocupados
+	var mecanicosAsignados []int
 	for _, inc := range incidencias {
 		if inc.Estado != "cerrada" {
 			for _, idMec := range inc.MecanicosID {
-				asignados[idMec] = true
+				mecanicosAsignados = append(mecanicosAsignados, idMec)
 			}
 		}
 	}
@@ -826,7 +826,17 @@ func listarMecanicosDisponibles() {
 	// Mostrar mecánicos que están activos y no asignados
 	hayDisponibles := false
 	for _, m := range mecanicos {
-		if m.Activo && !asignados[m.ID] {
+		// Verificar si el mecánico está asignado
+		estaAsignado := false
+		for _, idAsignado := range mecanicosAsignados {
+			if m.ID == idAsignado {
+				estaAsignado = true
+				break
+			}
+		}
+		
+		// Mostrar solo si está activo y no está asignado
+		if m.Activo && !estaAsignado {
 			hayDisponibles = true
 			fmt.Printf("  ID: %d | %s | Especialidad: %s\n",
 				m.ID, m.Nombre, m.Especialidad)
@@ -861,18 +871,38 @@ func listarIncidenciasMecanico() {
 func listarClientesEnTaller() {
 	fmt.Println("\n--- CLIENTES CON VEHÍCULOS EN TALLER ---")
 
-	// Crear un mapa con los IDs de clientes que tienen vehículos en taller
-	clientesEnTaller := make(map[int]bool)
+	// Crear un slice con los IDs de clientes que tienen vehículos en taller
+	var clientesConVehiculosEnTaller []int
 	for _, v := range vehiculos {
 		if v.EnTaller {
-			clientesEnTaller[v.IDCliente] = true
+			// Verificar si el cliente ya está en el slice
+			yaRegistrado := false
+			for _, idCliente := range clientesConVehiculosEnTaller {
+				if idCliente == v.IDCliente {
+					yaRegistrado = true
+					break
+				}
+			}
+			// Si no está registrado, agregarlo
+			if !yaRegistrado {
+				clientesConVehiculosEnTaller = append(clientesConVehiculosEnTaller, v.IDCliente)
+			}
 		}
 	}
 
 	// Mostrar información de esos clientes
 	hayClientes := false
 	for _, c := range clientes {
-		if clientesEnTaller[c.ID] {
+		// Verificar si el cliente está en el slice
+		tieneVehiculoEnTaller := false
+		for _, idCliente := range clientesConVehiculosEnTaller {
+			if c.ID == idCliente {
+				tieneVehiculoEnTaller = true
+				break
+			}
+		}
+		
+		if tieneVehiculoEnTaller {
 			hayClientes = true
 			fmt.Printf("  ID: %d | Nombre: %s | Tel: %s\n",
 				c.ID, c.Nombre, c.Telefono)
@@ -950,7 +980,6 @@ func mostrarMenuPrincipal() {
 		}
 	}
 }
-
 
 func main() {
 	inicializarDatos()
